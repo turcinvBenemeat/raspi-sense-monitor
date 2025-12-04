@@ -3,10 +3,11 @@
 Raspberry Pi 400 + Sense HAT → InfluxDB + Grafana dashboard
 
 This project logs all sensor data from a Sense HAT attached to a Raspberry Pi (temperature, humidity, pressure, 
-orientation, acceleration, gyroscope, magnetometer), stores it in InfluxDB, and visualizes it with Grafana.
+orientation, acceleration, gyroscope, magnetometer) **plus** Raspberry Pi system metrics (CPU temperature, CPU usage, 
+memory, disk, load average), stores it in InfluxDB, and visualizes it with Grafana.
 
 Components:
-1. Python Logger (reads Sense HAT sensors)
+1. Python Logger (reads Sense HAT sensors + Raspberry Pi system metrics)
 2. Docker stack with
    - InfluxDB 2.x (time-series DB)
    - Grafana (web dashboard)
@@ -121,7 +122,8 @@ python logger/main.py
 
 You should see:
 ```
-Wrote: {'temperature': ..., 'humidity': ..., 'pressure': ..., 'pitch': ..., 'roll': ..., 'yaw': ..., 'accel_x': ..., 'accel_y': ..., 'accel_z': ..., 'gyro_x': ..., 'gyro_y': ..., 'gyro_z': ..., 'compass_x': ..., 'compass_y': ..., 'compass_z': ...}
+Wrote Sense HAT: {'temperature': ..., 'humidity': ..., 'pressure': ..., ...}
+Wrote System: {'cpu_temp': ..., 'cpu_percent': ..., 'mem_percent': ..., ...}
 ```
 
 Stop with Ctrl+C.
@@ -238,6 +240,56 @@ from(bucket: "sensehat")
   |> filter(fn: (r) =>
     r._measurement == "sensehat" and
     (r._field == "compass_x" or r._field == "compass_y" or r._field == "compass_z")
+  )
+```
+
+### 7.3 Raspberry Pi System Metrics
+
+**CPU Temperature**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "raspberry_pi" and r._field == "cpu_temp"
+  )
+```
+
+**CPU Usage**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "raspberry_pi" and r._field == "cpu_percent"
+  )
+```
+
+**Memory Usage**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "raspberry_pi" and
+    (r._field == "mem_percent" or r._field == "mem_used_gb" or r._field == "mem_available_gb")
+  )
+```
+
+**Disk Usage**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "raspberry_pi" and
+    (r._field == "disk_percent" or r._field == "disk_used_gb" or r._field == "disk_free_gb")
+  )
+```
+
+**Load Average**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "raspberry_pi" and
+    (r._field == "load_avg_1min" or r._field == "load_avg_5min" or r._field == "load_avg_15min")
   )
 ```
 
