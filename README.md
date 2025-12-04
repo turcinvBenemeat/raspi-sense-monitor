@@ -8,11 +8,11 @@ memory, disk, load average), stores it in PostgreSQL, and visualizes it with Gra
 
 Components:
 1. Python Logger (reads Sense HAT sensors + Raspberry Pi system metrics)
-2. Docker stack with
-   - PostgreSQL (database)
+2. Remote PostgreSQL server (database - runs on separate server)
+3. Docker stack with
    - Grafana (web dashboard)
-3. systemd service for auto-start on boot
-4. Browser dashboard to monitor live data
+4. systemd service for auto-start on boot
+5. Browser dashboard to monitor live data
 
 ## Repository Structure
 
@@ -25,7 +25,7 @@ raspi-sense-monitor/
 │   └── systemd/
 │       └── sense-logger.service
 │
-├── docker/                     # PostgreSQL + Grafana docker stack
+├── docker/                     # Grafana docker stack
 │   └── docker-compose.yml
 │
 ├── dashboards/                 # Exported Grafana dashboards (JSON)
@@ -91,20 +91,52 @@ Edit .env if needed.
 
 ---
 
-## 4. Start PostgreSQL + Grafana
+## 4. Configure Remote PostgreSQL
+
+**Note:** This setup assumes PostgreSQL is running on a remote server. The Raspberry Pi logger will connect to it.
+
+### 4.1 Setup Remote PostgreSQL Server
+
+On your remote PostgreSQL server, ensure:
+- PostgreSQL is installed and running
+- Database and user are created:
+  ```sql
+  CREATE DATABASE sensehat;
+  CREATE USER postgres WITH PASSWORD 'your-postgres-password';
+  GRANT ALL PRIVILEGES ON DATABASE sensehat TO postgres;
+  ```
+- PostgreSQL allows connections from the Raspberry Pi IP (configure `pg_hba.conf`):
+  ```
+  host    sensehat    postgres    <raspberry-pi-ip>/32    md5
+  ```
+- Firewall allows connections on port 5432 from the Raspberry Pi
+
+### 4.2 Configure Raspberry Pi Connection
+
+Update `.env` file on the Raspberry Pi with your remote PostgreSQL server details:
+```bash
+POSTGRES_HOST=your-server-ip-or-hostname
+POSTGRES_PORT=5432
+POSTGRES_DB=sensehat
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-postgres-password
+```
+
+**Note:** The logger will automatically create the required tables (`sensehat` and `raspberry_pi`) on first run when it connects to the database.
+
+## 5. Start Grafana
 ```bash
 cd docker
 docker compose up -d
 ```
 
 Access services:
-- PostgreSQL: localhost:5432
 - Grafana UI: http://localhost:3000
 - Default credentials: admin / grafana (from .env)
 
 ---
 
-## 5. Install Python Logger
+## 6. Install Python Logger
 ```bash
 cd raspi-sense-monitor/logger
 python3 -m venv .venv
@@ -130,7 +162,7 @@ Stop with Ctrl+C.
 
 ---
 
-## 6. Enable logger as systemd service
+## 7. Enable logger as systemd service
 Copy service file:
 ```bash
 sudo cp logger/systemd/sense-logger.service /etc/systemd/system/
@@ -144,25 +176,27 @@ The logger now runs automatically on boot.
 
 ---
 
-## 7. Create Grafana Dashboard
+## 8. Create Grafana Dashboard
 Open Grafana:
 
 ```
 http://localhost:3000
 ```
 
-### 7.1 Add PostgreSQL as a data source
+### 8.1 Add PostgreSQL as a data source
 1. Configuration → Data Sources
 2. Add PostgreSQL
 3. Set:
-   - Host: postgres:5432
+   - Host: your-remote-postgres-server:5432 (use the same host as in .env)
    - Database: sensehat (from .env)
    - User: postgres (from .env)
-   - Password: postgres (from .env)
-   - SSL Mode: disable
+   - Password: your-postgres-password (from .env)
+   - SSL Mode: disable (or enable if your server requires SSL)
 4. Click Save & Test
 
-### 7.2 Create your first panel
+**Note:** If Grafana is running in Docker and PostgreSQL is on a remote server, use the server's IP/hostname directly, not `postgres:5432`.
+
+### 8.2 Create your first panel
 1. `+` → Dashboard → Add new panel
 2. Select PostgreSQL data source
 3. Switch to "Code" mode and paste SQL query:
@@ -256,7 +290,7 @@ WHERE timestamp >= NOW() - INTERVAL '1 hour'
 ORDER BY timestamp
 ```
 
-### 7.3 Raspberry Pi System Metrics
+### 8.3 Raspberry Pi System Metrics
 
 **CPU Temperature**
 ```sql
@@ -318,7 +352,7 @@ Click Save Dashboard.
 
 ---
 
-## 8. Export dashboard for Git
+## 9. Export dashboard for Git
 Grafana → Dashboard → Menu (⋮) → Dashboard settings → JSON model → Export
 
 Save into:
