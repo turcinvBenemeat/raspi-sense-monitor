@@ -1,0 +1,13 @@
+[Unit]
+Description=Sense HAT Logger Service
+After=network-online.target docker.service
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/raspi-sense-monitor/logger
+ExecStart=/home/pi/raspi-sense-monitor/logger/.venv/bin/python main.py
+EnvironmentFile=/home/pi/raspi-sense-monitor/.env
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

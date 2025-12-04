@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Env files
+.env
+
+# Docker volumes, logs
+docker/influxdb-data/
+docker/grafana-data/
