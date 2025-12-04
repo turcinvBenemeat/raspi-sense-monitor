@@ -21,6 +21,16 @@ raspi-sense-monitor/
 │
 ├── logger/                     # Python Sense HAT logger
 │   ├── main.py
+│   ├── config.py               # Configuration management
+│   ├── utils/                   # Utility modules
+│   │   ├── __init__.py
+│   │   └── logger.py           # Logging utility
+│   ├── tests/                   # Test suite
+│   │   ├── test_models.py     # Model tests
+│   │   ├── test_config.py     # Config tests
+│   │   ├── test_sensors.py    # Sensor reader tests
+│   │   ├── test_database.py  # Database tests
+│   │   └── conftest.py        # Pytest fixtures
 │   ├── requirements.txt
 │   └── systemd/
 │       └── sense-logger.service
@@ -141,6 +151,40 @@ sudo systemctl status sense-logger
 ```
 
 The logger now runs automatically on boot.
+
+### 6.1 Viewing Logs
+
+**Application Logs:**
+
+The logger writes application logs to two places:
+
+1. **Systemd Journal** (always available):
+   ```bash
+   # View recent logs
+   sudo journalctl -u sense-logger -n 50
+   
+   # Follow logs in real-time
+   sudo journalctl -u sense-logger -f
+   
+   # View logs from today
+   sudo journalctl -u sense-logger --since today
+   ```
+
+2. **Log File** (if `LOG_DIR` is configured in `.env`):
+   - Default location: `/var/log/raspi-sense-monitor/sense-logger.log`
+   - View logs:
+     ```bash
+     tail -f /var/log/raspi-sense-monitor/sense-logger.log
+     ```
+   - To disable file logging, set `LOG_DIR=` (empty) in `.env`
+
+**Sensor Data Logs:**
+
+Sensor data is saved to PostgreSQL database:
+- **Sense HAT data**: `sensehat` table
+- **System metrics**: `raspberry_pi` table
+
+Query via SQL or view in Grafana dashboards.
 
 ---
 
@@ -331,3 +375,38 @@ Commit:
 git add .
 git commit -m "Add working Sense HAT dashboard"
 ```
+
+---
+
+## 9. Running Tests
+
+The project includes a comprehensive test suite. To run tests:
+
+```bash
+cd logger
+source .venv/bin/activate
+pip install -r requirements.txt  # Installs pytest and pytest-cov
+pytest
+```
+
+Run tests with coverage report:
+```bash
+pytest --cov=. --cov-report=html
+```
+
+View coverage report:
+```bash
+open htmlcov/index.html  # macOS
+# or
+xdg-open htmlcov/index.html  # Linux
+```
+
+The test suite includes:
+- Model validation tests
+- Configuration management tests
+- Sensor reader tests (with mocks)
+- Database operation tests (with mocks)
+
+All tests use mocks, so they can run without actual hardware or database connections.
+
+See `logger/tests/README.md` for more details.
