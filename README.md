@@ -1,15 +1,15 @@
 # Raspberry Pi Sense HAT Monitor
 
-Raspberry Pi 400 + Sense HAT → InfluxDB + Grafana dashboard
+Raspberry Pi 400 + Sense HAT → PostgreSQL + Grafana dashboard
 
 This project logs all sensor data from a Sense HAT attached to a Raspberry Pi (temperature, humidity, pressure, 
 orientation, acceleration, gyroscope, magnetometer) **plus** Raspberry Pi system metrics (CPU temperature, CPU usage, 
-memory, disk, load average), stores it in InfluxDB, and visualizes it with Grafana.
+memory, disk, load average), stores it in PostgreSQL, and visualizes it with Grafana.
 
 Components:
 1. Python Logger (reads Sense HAT sensors + Raspberry Pi system metrics)
 2. Docker stack with
-   - InfluxDB 2.x (time-series DB)
+   - PostgreSQL (database)
    - Grafana (web dashboard)
 3. systemd service for auto-start on boot
 4. Browser dashboard to monitor live data
@@ -25,7 +25,7 @@ raspi-sense-monitor/
 │   └── systemd/
 │       └── sense-logger.service
 │
-├── docker/                     # InfluxDB + Grafana docker stack
+├── docker/                     # PostgreSQL + Grafana docker stack
 │   └── docker-compose.yml
 │
 ├── dashboards/                 # Exported Grafana dashboards (JSON)
@@ -91,14 +91,14 @@ Edit .env if needed.
 
 ---
 
-## 4. Start InfluxDB + Grafana
+## 4. Start PostgreSQL + Grafana
 ```bash
 cd docker
 docker compose up -d
 ```
 
 Access services:
-- InfluxDB UI: http://localhost:8086
+- PostgreSQL: localhost:5432
 - Grafana UI: http://localhost:3000
 - Default credentials: admin / grafana (from .env)
 
@@ -151,33 +151,36 @@ Open Grafana:
 http://localhost:3000
 ```
 
-### 7.1 Add InfluxDB as a data source
+### 7.1 Add PostgreSQL as a data source
 1. Configuration → Data Sources
-2. Add InfluxDB
+2. Add PostgreSQL
 3. Set:
-   - Query language: Flux
-   - URL: http://influxdb:8086
-   - Organization: bt-org
-   - Bucket: sensehat
-   - Token: from .env (super-secret-token)
+   - Host: postgres:5432
+   - Database: sensehat (from .env)
+   - User: postgres (from .env)
+   - Password: postgres (from .env)
+   - SSL Mode: disable
 4. Click Save & Test
 
 ### 7.2 Create your first panel
 1. `+` → Dashboard → Add new panel
-2. Paste Flux query:
+2. Select PostgreSQL data source
+3. Switch to "Code" mode and paste SQL query:
 
 **Temperature**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and r._field == "temperature"
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  temperature AS "Temperature"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 Set panel:
 - Title: Temperature
 - Unit: °C
+- Visualization: Time series
 
 Click Apply.
 
@@ -186,111 +189,129 @@ Click Apply.
 ### More useful queries
 
 **Humidity**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and r._field == "humidity"
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  humidity AS "Humidity"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Pressure**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and r._field == "pressure"
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  pressure AS "Pressure"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Orientation (pitch / roll / yaw)**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and
-    (r._field == "pitch" or r._field == "roll" or r._field == "yaw")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  pitch AS "Pitch",
+  roll AS "Roll",
+  yaw AS "Yaw"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Acceleration**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and
-    (r._field == "accel_x" or r._field == "accel_y" or r._field == "accel_z")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  accel_x AS "Accel X",
+  accel_y AS "Accel Y",
+  accel_z AS "Accel Z"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Gyroscope**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and
-    (r._field == "gyro_x" or r._field == "gyro_y" or r._field == "gyro_z")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  gyro_x AS "Gyro X",
+  gyro_y AS "Gyro Y",
+  gyro_z AS "Gyro Z"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Magnetometer/Compass**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "sensehat" and
-    (r._field == "compass_x" or r._field == "compass_y" or r._field == "compass_z")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  compass_x AS "Compass X",
+  compass_y AS "Compass Y",
+  compass_z AS "Compass Z"
+FROM sensehat
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 ### 7.3 Raspberry Pi System Metrics
 
 **CPU Temperature**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "raspberry_pi" and r._field == "cpu_temp"
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  cpu_temp AS "CPU Temperature"
+FROM raspberry_pi
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **CPU Usage**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "raspberry_pi" and r._field == "cpu_percent"
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  cpu_percent AS "CPU Usage (%)"
+FROM raspberry_pi
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Memory Usage**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "raspberry_pi" and
-    (r._field == "mem_percent" or r._field == "mem_used_gb" or r._field == "mem_available_gb")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  mem_percent AS "Memory (%)",
+  mem_used_gb AS "Memory Used (GB)",
+  mem_available_gb AS "Memory Available (GB)"
+FROM raspberry_pi
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Disk Usage**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "raspberry_pi" and
-    (r._field == "disk_percent" or r._field == "disk_used_gb" or r._field == "disk_free_gb")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  disk_percent AS "Disk (%)",
+  disk_used_gb AS "Disk Used (GB)",
+  disk_free_gb AS "Disk Free (GB)"
+FROM raspberry_pi
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 **Load Average**
-```flux
-from(bucket: "sensehat")
-  |> range(start: -1h)
-  |> filter(fn: (r) =>
-    r._measurement == "raspberry_pi" and
-    (r._field == "load_avg_1min" or r._field == "load_avg_5min" or r._field == "load_avg_15min")
-  )
+```sql
+SELECT
+  timestamp AS "time",
+  load_avg_1min AS "Load 1min",
+  load_avg_5min AS "Load 5min",
+  load_avg_15min AS "Load 15min"
+FROM raspberry_pi
+WHERE timestamp >= NOW() - INTERVAL '1 hour'
+ORDER BY timestamp
 ```
 
 Click Save Dashboard.

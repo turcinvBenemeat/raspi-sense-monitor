@@ -1,16 +1,22 @@
 version: "3.8"
 
 services:
-  influxdb:
-    image: influxdb:2
+  postgres:
+    image: postgres:15-alpine
     restart: unless-stopped
     ports:
-      - "8086:8086"
-    env_file:
-      - ../.env
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sensehat}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - influxdb-data:/var/lib/influxdb2
-      - influxdb-config:/etc/influxdb2
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   grafana:
     image: grafana/grafana-oss
@@ -21,8 +27,10 @@ services:
       - ../.env
     volumes:
       - grafana-data:/var/lib/grafana
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
-  influxdb-data:
-  influxdb-config:
+  postgres-data:
   grafana-data:
