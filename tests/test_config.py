@@ -18,7 +18,7 @@ class TestConfig:
         with patch.dict(os.environ, {}, clear=True):
             # Reload config module to get defaults
             import importlib
-            import config
+            from src import config
             importlib.reload(config)
             
             assert config.Config.POSTGRES_HOST == "localhost"
@@ -29,7 +29,7 @@ class TestConfig:
     def test_env_vars_override(self, mock_env_vars):
         """Test environment variables override defaults"""
         import importlib
-        import config
+        from src import config
         importlib.reload(config)
         
         assert config.Config.POSTGRES_HOST == "test-host"
@@ -55,7 +55,7 @@ class TestConfig:
         for env_value, expected in test_cases:
             with patch.dict(os.environ, {"ENABLE_SENSEHAT": env_value}):
                 import importlib
-                import config
+                from src import config
                 importlib.reload(config)
                 assert config.Config.ENABLE_SENSEHAT == expected, f"Failed for {env_value}"
     
@@ -72,7 +72,7 @@ class TestConfig:
         for env_value, expected in test_cases:
             with patch.dict(os.environ, {"ENABLE_SYSTEM_METRICS": env_value}):
                 import importlib
-                import config
+                from src import config
                 importlib.reload(config)
                 assert config.Config.ENABLE_SYSTEM_METRICS == expected
 

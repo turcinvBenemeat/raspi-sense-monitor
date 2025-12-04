@@ -33,7 +33,7 @@ services:
 
   logger:
     build:
-      context: ../logger
+      context: ../src
       dockerfile: ../dev/Dockerfile
     restart: unless-stopped
     env_file:

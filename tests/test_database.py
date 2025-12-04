@@ -9,9 +9,9 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from logger.database import Database, get_database
-from logger.models import SenseHatData, RaspberryPiData
-from logger.config import Config
+from src.database import Database, get_database
+from src.models import SenseHatData, RaspberryPiData
+from src.config import Config
 
 
 class TestDatabase:

@@ -9,8 +9,8 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from logger.sensors import SenseHatReader, SystemReader
-from logger.models import SenseHatData, RaspberryPiData
+from src.sensors import SenseHatReader, SystemReader
+from src.models import SenseHatData, RaspberryPiData
 
 
 class TestSenseHatReader:

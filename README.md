@@ -19,7 +19,7 @@ Components:
 ```
 raspi-sense-monitor/
 │
-├── logger/                     # Python Sense HAT logger
+├── src/                        # Production code (Python Sense HAT logger)
 │   ├── main.py
 │   ├── config.py               # Configuration management
 │   ├── models/                  # Data models
@@ -166,7 +166,7 @@ Access services:
 For Raspberry Pi with real hardware:
 
 ```bash
-cd raspi-sense-monitor/logger
+cd raspi-sense-monitor/src
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -175,9 +175,9 @@ pip install -r requirements.txt
 Test logger manually:
 ```bash
 cd ..
-source logger/.venv/bin/activate
+source src/.venv/bin/activate
 export $(grep -v '^#' .env | xargs)
-python logger/main.py
+python src/main.py
 ```
 
 You should see:
@@ -201,7 +201,7 @@ python logger/main.py
 **Skip this step if you're using Docker logger (Option A above).**
 Copy service file:
 ```bash
-sudo cp logger/systemd/sense-logger.service /etc/systemd/system/
+sudo cp src/systemd/sense-logger.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable sense-logger
 sudo systemctl start sense-logger
@@ -442,7 +442,7 @@ The project includes a comprehensive test suite. To run tests:
 
 ```bash
 # Setup virtual environment
-cd logger
+cd src
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt  # Installs pytest and pytest-cov
@@ -454,7 +454,7 @@ pytest tests/
 
 Run tests with coverage report:
 ```bash
-pytest tests/ --cov=logger --cov-report=html
+pytest tests/ --cov=src --cov-report=html
 ```
 
 View coverage report:
