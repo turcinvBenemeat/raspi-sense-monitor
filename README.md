@@ -2,8 +2,8 @@
 
 Raspberry Pi 400 + Sense HAT → InfluxDB + Grafana dashboard
 
-This project logs environmental and motion data from a Sense HAT attached to a Raspberry Pi, stores it in InfluxDB, 
-and visualizes it with Grafana.
+This project logs all sensor data from a Sense HAT attached to a Raspberry Pi (temperature, humidity, pressure, 
+orientation, acceleration, gyroscope, magnetometer), stores it in InfluxDB, and visualizes it with Grafana.
 
 Components:
 1. Python Logger (reads Sense HAT sensors)
@@ -121,7 +121,7 @@ python logger/main.py
 
 You should see:
 ```
-Wrote: {'temperature': ..., 'humidity': ...}
+Wrote: {'temperature': ..., 'humidity': ..., 'pressure': ..., 'pitch': ..., 'roll': ..., 'yaw': ..., 'accel_x': ..., 'accel_y': ..., 'accel_z': ..., 'gyro_x': ..., 'gyro_y': ..., 'gyro_z': ..., 'compass_x': ..., 'compass_y': ..., 'compass_z': ...}
 ```
 
 Stop with Ctrl+C.
@@ -218,6 +218,26 @@ from(bucket: "sensehat")
   |> filter(fn: (r) =>
     r._measurement == "sensehat" and
     (r._field == "accel_x" or r._field == "accel_y" or r._field == "accel_z")
+  )
+```
+
+**Gyroscope**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "sensehat" and
+    (r._field == "gyro_x" or r._field == "gyro_y" or r._field == "gyro_z")
+  )
+```
+
+**Magnetometer/Compass**
+```flux
+from(bucket: "sensehat")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "sensehat" and
+    (r._field == "compass_x" or r._field == "compass_y" or r._field == "compass_z")
   )
 ```
 

@@ -33,6 +33,18 @@ def read_sense_data():
     ay = accel_raw["y"]
     az = accel_raw["z"]
 
+    # Gyroscope (raw)
+    gyro_raw = sense.get_gyroscope_raw()
+    gx = gyro_raw["x"]
+    gy = gyro_raw["y"]
+    gz = gyro_raw["z"]
+
+    # Magnetometer/Compass (raw)
+    compass_raw = sense.get_compass_raw()
+    mx = compass_raw["x"]
+    my = compass_raw["y"]
+    mz = compass_raw["z"]
+
     return {
         "temperature": temp,
         "humidity": hum,
@@ -43,6 +55,12 @@ def read_sense_data():
         "accel_x": ax,
         "accel_y": ay,
         "accel_z": az,
+        "gyro_x": gx,
+        "gyro_y": gy,
+        "gyro_z": gz,
+        "compass_x": mx,
+        "compass_y": my,
+        "compass_z": mz,
     }
 
 
@@ -58,6 +76,12 @@ def write_to_influx(data):
         .field("accel_x", float(data["accel_x"]))
         .field("accel_y", float(data["accel_y"]))
         .field("accel_z", float(data["accel_z"]))
+        .field("gyro_x", float(data["gyro_x"]))
+        .field("gyro_y", float(data["gyro_y"]))
+        .field("gyro_z", float(data["gyro_z"]))
+        .field("compass_x", float(data["compass_x"]))
+        .field("compass_y", float(data["compass_y"]))
+        .field("compass_z", float(data["compass_z"]))
         .time(time.time_ns(), WritePrecision.NS)
     )
     write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=p)
