@@ -5,6 +5,10 @@ import time
 from config import Config
 from database import get_database
 from sensors import SenseHatReader, SystemReader
+from utils import setup_logger
+
+# Setup logger
+logger = setup_logger()
 
 
 def main():
@@ -20,19 +24,19 @@ def main():
         sensehat_reader = SenseHatReader()
         if sensehat_reader.is_available():
             use_sensehat = True
-            print("Sense HAT logging enabled", flush=True)
+            logger.info("Sense HAT logging enabled")
         else:
-            print("Sense HAT not available, continuing with system metrics only", flush=True)
+            logger.warning("Sense HAT not available, continuing with system metrics only")
     else:
-        print("Sense HAT logging disabled by configuration", flush=True)
+        logger.info("Sense HAT logging disabled by configuration")
     
     if not Config.ENABLE_SYSTEM_METRICS:
-        print("Warning: System metrics logging is disabled", flush=True)
+        logger.warning("System metrics logging is disabled")
     
     interval = Config.SAMPLE_INTERVAL
     
     device_info = f" (Device: {Config.DEVICE_ID})" if Config.DEVICE_ID else ""
-    print(f"Starting logger{device_info}...", flush=True)
+    logger.info(f"Starting logger{device_info}...")
     
     while True:
         try:
@@ -41,17 +45,17 @@ def main():
                 try:
                     sense_data = sensehat_reader.read()
                     db.write_sensehat_data(sense_data)
-                    print("Wrote Sense HAT:", sense_data, flush=True)
+                    logger.debug(f"Wrote Sense HAT: {sense_data}")
                 except Exception as e:
-                    print(f"Sense HAT error: {e}", flush=True)
+                    logger.error(f"Sense HAT error: {e}", exc_info=True)
             
             # Read and write system metrics (if enabled)
             if Config.ENABLE_SYSTEM_METRICS:
                 system_data = system_reader.read()
                 db.write_raspberry_pi_data(system_data)
-                print("Wrote System:", system_data, flush=True)
+                logger.debug(f"Wrote System: {system_data}")
         except Exception as e:
-            print("Error:", e, flush=True)
+            logger.error(f"Error in main loop: {e}", exc_info=True)
         time.sleep(interval)
 
 

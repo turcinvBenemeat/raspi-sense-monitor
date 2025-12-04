@@ -296,6 +296,40 @@ sudo systemctl status sense-logger
 
 The logger now runs automatically on boot.
 
+### 7.1 Viewing Logs
+
+**Application Logs:**
+
+The logger writes application logs to two places:
+
+1. **Systemd Journal** (always available):
+   ```bash
+   # View recent logs
+   sudo journalctl -u sense-logger -n 50
+   
+   # Follow logs in real-time
+   sudo journalctl -u sense-logger -f
+   
+   # View logs from today
+   sudo journalctl -u sense-logger --since today
+   ```
+
+2. **Log File** (if `LOG_DIR` is configured in `.env`):
+   - Default location: `/var/log/raspi-sense-monitor/sense-logger.log`
+   - View logs:
+     ```bash
+     tail -f /var/log/raspi-sense-monitor/sense-logger.log
+     ```
+   - To disable file logging, set `LOG_DIR=` (empty) in `.env`
+
+**Sensor Data Logs:**
+
+Sensor data is saved to PostgreSQL database:
+- **Sense HAT data**: `sensehat` table
+- **System metrics**: `raspberry_pi` table
+
+Query via SQL or view in Grafana dashboards.
+
 ---
 
 ## 8. Create Grafana Dashboard

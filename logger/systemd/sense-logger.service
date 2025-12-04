@@ -8,6 +8,8 @@ WorkingDirectory=/home/pi/raspi-sense-monitor/logger
 ExecStart=/home/pi/raspi-sense-monitor/logger/.venv/bin/python main.py
 EnvironmentFile=/home/pi/raspi-sense-monitor/.env
 Restart=always
+# Create log directory if LOG_DIR is set
+ExecStartPre=/bin/bash -c 'if [ -n "$LOG_DIR" ]; then mkdir -p "$LOG_DIR" && chown pi:pi "$LOG_DIR"; fi'
 
 [Install]
 WantedBy=multi-user.target

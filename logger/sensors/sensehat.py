@@ -20,11 +20,14 @@ class SenseHatReader:
             # Test if Sense HAT is actually connected
             _ = self.sense.get_temperature()
             self.available = True
-            print("Sense HAT detected and initialized", flush=True)
+            import logging
+            logging.getLogger("sense_logger").info("Sense HAT detected and initialized")
         except (ImportError, OSError, RuntimeError) as e:
             self.available = False
-            print(f"Sense HAT not available: {e}", flush=True)
-            print("Continuing without Sense HAT sensors...", flush=True)
+            import logging
+            logger = logging.getLogger("sense_logger")
+            logger.warning(f"Sense HAT not available: {e}")
+            logger.info("Continuing without Sense HAT sensors...")
     
     def is_available(self) -> bool:
         """Check if Sense HAT is available"""

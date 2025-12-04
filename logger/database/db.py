@@ -96,10 +96,13 @@ class Database:
             
             conn.commit()
             cur.close()
-            print("Database initialized successfully", flush=True)
+            import logging
+            logging.getLogger("sense_logger").info("Database initialized successfully")
         except Exception as e:
-            print(f"Warning: Could not initialize database: {e}", flush=True)
-            print("Database will be initialized on first connection", flush=True)
+            import logging
+            logger = logging.getLogger("sense_logger")
+            logger.warning(f"Could not initialize database: {e}")
+            logger.info("Database will be initialized on first connection")
     
     def write_sensehat_data(self, data: SenseHatData):
         """Write Sense HAT sensor data to database"""

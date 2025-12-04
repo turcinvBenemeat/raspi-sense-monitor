@@ -23,4 +23,9 @@ class Config:
     
     # Device identifier (optional, for multi-Pi setups)
     DEVICE_ID = os.environ.get("DEVICE_ID", None)  # e.g., "raspberry-pi-1", "raspberry-pi-2"
+    
+    # Logging configuration
+    LOG_DIR = os.environ.get("LOG_DIR", "/var/log/raspi-sense-monitor")
+    LOG_FILE = os.environ.get("LOG_FILE", "sense-logger.log")
+    LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
