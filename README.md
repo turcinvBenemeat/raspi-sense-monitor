@@ -38,6 +38,12 @@ raspi-sense-monitor/
 │   ├── database/                # Database operations
 │   │   ├── __init__.py
 │   │   └── db.py               # PostgreSQL operations
+│   ├── tests/                   # Test suite
+│   │   ├── test_models.py      # Model tests
+│   │   ├── test_config.py      # Config tests
+│   │   ├── test_sensors.py     # Sensor reader tests
+│   │   ├── test_database.py    # Database tests
+│   │   └── conftest.py         # Pytest fixtures
 │   ├── requirements.txt
 │   └── systemd/
 │       └── sense-logger.service
@@ -484,3 +490,36 @@ Commit:
 git add .
 git commit -m "Add working Sense HAT dashboard"
 ```
+
+---
+
+## 10. Running Tests
+
+The project includes a comprehensive test suite. To run tests:
+
+```bash
+cd logger
+source .venv/bin/activate
+pip install -r requirements.txt  # Installs pytest and pytest-cov
+pytest
+```
+
+Run tests with coverage report:
+```bash
+pytest --cov=. --cov-report=html
+```
+
+View coverage report:
+```bash
+open htmlcov/index.html  # macOS
+# or
+xdg-open htmlcov/index.html  # Linux
+```
+
+The test suite includes:
+- Model validation tests
+- Configuration management tests
+- Sensor reader tests (with mocks)
+- Database operation tests (with mocks)
+
+See `logger/tests/README.md` for more details.
