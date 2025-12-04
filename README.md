@@ -22,21 +22,38 @@ raspi-sense-monitor/
 ├── logger/                     # Python Sense HAT logger
 │   ├── main.py
 │   ├── config.py               # Configuration management
+│   ├── models/                  # Data models
+│   │   ├── __init__.py
+│   │   └── data.py
+│   ├── sensors/                 # Sensor reading modules
+│   │   ├── __init__.py
+│   │   ├── sensehat.py         # Sense HAT reader
+│   │   ├── system.py           # System metrics reader
+│   │   └── fake.py             # Fake data generator
+│   ├── database/                # Database operations
+│   │   ├── __init__.py
+│   │   └── db.py
 │   ├── utils/                   # Utility modules
 │   │   ├── __init__.py
 │   │   └── logger.py           # Logging utility
-│   ├── tests/                   # Test suite
-│   │   ├── test_models.py     # Model tests
-│   │   ├── test_config.py     # Config tests
-│   │   ├── test_sensors.py    # Sensor reader tests
-│   │   ├── test_database.py  # Database tests
-│   │   └── conftest.py        # Pytest fixtures
 │   ├── requirements.txt
 │   └── systemd/
 │       └── sense-logger.service
 │
-├── docker/                     # Docker stack (PostgreSQL + Grafana + Logger)
+├── tests/                       # Test suite
+│   ├── test_models.py          # Model tests
+│   ├── test_config.py          # Config tests
+│   ├── test_sensors.py         # Sensor reader tests
+│   ├── test_database.py        # Database tests
+│   ├── conftest.py             # Pytest fixtures
+│   └── README.md
+│
+├── docker/                      # Docker stack (PostgreSQL + Grafana + Logger)
 │   └── docker-compose.yml
+│
+├── dev/                         # Development tools
+│   ├── Dockerfile               # Dockerfile for logger service
+│   └── .dockerignore
 │
 ├── dashboards/                 # Exported Grafana dashboards (JSON)
 │
@@ -424,15 +441,20 @@ git commit -m "Add working Sense HAT dashboard"
 The project includes a comprehensive test suite. To run tests:
 
 ```bash
+# Setup virtual environment
 cd logger
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt  # Installs pytest and pytest-cov
-pytest
+
+# Run tests from project root
+cd ..
+pytest tests/
 ```
 
 Run tests with coverage report:
 ```bash
-pytest --cov=. --cov-report=html
+pytest tests/ --cov=logger --cov-report=html
 ```
 
 View coverage report:
@@ -450,4 +472,4 @@ The test suite includes:
 
 All tests use mocks, so they can run without actual hardware or database connections.
 
-See `logger/tests/README.md` for more details.
+See `tests/README.md` for more details.

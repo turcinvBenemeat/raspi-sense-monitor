@@ -34,7 +34,7 @@ services:
   logger:
     build:
       context: ../logger
-      dockerfile: Dockerfile
+      dockerfile: ../dev/Dockerfile
     restart: unless-stopped
     env_file:
       - ../.env

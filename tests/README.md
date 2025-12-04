@@ -6,17 +6,21 @@ This directory contains tests for the Raspberry Pi Sense HAT Monitor logger.
 
 Install test dependencies:
 ```bash
+cd logger
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+cd ..
 ```
 
 Run all tests:
 ```bash
-pytest
+pytest tests/
 ```
 
 Run with coverage:
 ```bash
-pytest --cov=. --cov-report=html
+pytest tests/ --cov=logger --cov-report=html
 ```
 
 Run specific test file:
