@@ -20,6 +20,9 @@ class Config:
     # Device identifier (optional, for multi-Pi setups)
     DEVICE_ID = os.environ.get("DEVICE_ID", None)
     
+    # Fake data mode (for testing/development without hardware)
+    FAKE_DATA = os.environ.get("FAKE_DATA", "false").lower() in ("true", "1", "yes")
+    
     # Logging configuration
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/raspi-sense-monitor")
     LOG_FILE = os.environ.get("LOG_FILE", "sense-logger.log")

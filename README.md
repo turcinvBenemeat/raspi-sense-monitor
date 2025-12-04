@@ -35,7 +35,7 @@ raspi-sense-monitor/
 │   └── systemd/
 │       └── sense-logger.service
 │
-├── docker/                     # PostgreSQL + Grafana docker stack
+├── docker/                     # Docker stack (PostgreSQL + Grafana + Logger)
 │   └── docker-compose.yml
 │
 ├── dashboards/                 # Exported Grafana dashboards (JSON)
@@ -101,10 +101,36 @@ Edit .env if needed.
 
 ---
 
-## 4. Start PostgreSQL + Grafana
+## 4. Start Services
+
+### Option A: Full Stack with Docker Logger (Fake Data - for testing/development)
+
+Run everything in Docker, including the logger with fake sensor data:
+
 ```bash
 cd docker
+# Set FAKE_DATA=true in .env (or export it)
+export FAKE_DATA=true
 docker compose up -d
+```
+
+This starts:
+- PostgreSQL (database)
+- Grafana (dashboard)
+- Logger (with fake sensor data)
+
+The logger will automatically generate realistic fake data for all sensors.
+
+### Option B: Only PostgreSQL + Grafana (for Raspberry Pi with real hardware)
+
+Run only database and Grafana, logger runs on Raspberry Pi:
+
+```bash
+cd docker
+# Comment out or remove the logger service from docker-compose.yml
+# Or set FAKE_DATA=false
+export FAKE_DATA=false
+docker compose up -d postgres grafana
 ```
 
 Access services:
@@ -112,9 +138,16 @@ Access services:
 - Grafana UI: http://localhost:3000
 - Default credentials: admin / grafana (from .env)
 
+**Note:** When running logger in Docker, set `POSTGRES_HOST=postgres` in `.env` (uses Docker service name). For Raspberry Pi, use `POSTGRES_HOST=localhost`.
+
 ---
 
-## 5. Install Python Logger
+## 5. Install Python Logger (Raspberry Pi Only)
+
+**Skip this step if you're using Docker logger (Option A above).**
+
+For Raspberry Pi with real hardware:
+
 ```bash
 cd raspi-sense-monitor/logger
 python3 -m venv .venv
@@ -138,9 +171,17 @@ Wrote System: {'cpu_temp': ..., 'cpu_percent': ..., 'mem_percent': ..., ...}
 
 Stop with Ctrl+C.
 
+**Test with fake data (on any machine):**
+```bash
+export FAKE_DATA=true
+python logger/main.py
+```
+
 ---
 
-## 6. Enable logger as systemd service
+## 6. Enable logger as systemd service (Raspberry Pi Only)
+
+**Skip this step if you're using Docker logger (Option A above).**
 Copy service file:
 ```bash
 sudo cp logger/systemd/sense-logger.service /etc/systemd/system/

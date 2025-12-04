@@ -4,11 +4,19 @@ Main entry point for Raspberry Pi Sense HAT Monitor
 import time
 from config import Config
 from database import get_database
-from sensors import SenseHatReader, SystemReader
 from utils.logger import setup_logger
 
 # Setup logger
 logger = setup_logger()
+
+# Import sensor readers based on mode
+if Config.FAKE_DATA:
+    from sensors.fake import FakeSenseHatReader, FakeSystemReader
+    SenseHatReader = FakeSenseHatReader
+    SystemReader = FakeSystemReader
+    logger.info("FAKE_DATA mode enabled - using fake sensor data")
+else:
+    from sensors import SenseHatReader, SystemReader
 
 
 def main():
@@ -20,15 +28,16 @@ def main():
     interval = Config.SAMPLE_INTERVAL
     
     device_info = f" (Device: {Config.DEVICE_ID})" if Config.DEVICE_ID else ""
-    logger.info(f"Starting logger{device_info}...")
+    mode_info = " [FAKE DATA MODE]" if Config.FAKE_DATA else ""
+    logger.info(f"Starting logger{device_info}{mode_info}...")
     
-    if not sensehat_reader.is_available():
+    if not Config.FAKE_DATA and not sensehat_reader.is_available():
         logger.warning("Sense HAT not available, continuing with system metrics only")
     
     while True:
         try:
-            # Read and write Sense HAT data (if available)
-            if sensehat_reader.is_available():
+            # Read and write Sense HAT data (if available or in fake mode)
+            if Config.FAKE_DATA or sensehat_reader.is_available():
                 try:
                     sense_data = sensehat_reader.read()
                     db.write_sensehat_data(sense_data)

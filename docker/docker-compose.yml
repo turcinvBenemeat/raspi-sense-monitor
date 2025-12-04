@@ -31,6 +31,25 @@ services:
       postgres:
         condition: service_healthy
 
+  logger:
+    build:
+      context: ../logger
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_HOST: postgres  # Use Docker service name
+      POSTGRES_PORT: 5432
+      FAKE_DATA: ${FAKE_DATA:-true}
+      DEVICE_ID: ${DEVICE_ID:-docker-laptop}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - logger-logs:/var/log/raspi-sense-monitor
+
 volumes:
   postgres-data:
   grafana-data:
+  logger-logs:
