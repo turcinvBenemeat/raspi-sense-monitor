@@ -16,4 +16,11 @@ class Config:
     
     # Logger configuration
     SAMPLE_INTERVAL = float(os.environ.get("SAMPLE_INTERVAL", "5"))
+    
+    # Sensor configuration
+    ENABLE_SENSEHAT = os.environ.get("ENABLE_SENSEHAT", "auto").lower() in ("true", "1", "yes", "auto")
+    ENABLE_SYSTEM_METRICS = os.environ.get("ENABLE_SYSTEM_METRICS", "true").lower() in ("true", "1", "yes")
+    
+    # Device identifier (optional, for multi-Pi setups)
+    DEVICE_ID = os.environ.get("DEVICE_ID", None)  # e.g., "raspberry-pi-1", "raspberry-pi-2"
 

@@ -9,10 +9,32 @@ class SenseHatReader:
     """Reads data from Sense HAT sensors"""
     
     def __init__(self):
-        self.sense = SenseHat()
+        self.sense = None
+        self.available = False
+        self._initialize()
+    
+    def _initialize(self):
+        """Initialize Sense HAT if available"""
+        try:
+            self.sense = SenseHat()
+            # Test if Sense HAT is actually connected
+            _ = self.sense.get_temperature()
+            self.available = True
+            print("Sense HAT detected and initialized", flush=True)
+        except (ImportError, OSError, RuntimeError) as e:
+            self.available = False
+            print(f"Sense HAT not available: {e}", flush=True)
+            print("Continuing without Sense HAT sensors...", flush=True)
+    
+    def is_available(self) -> bool:
+        """Check if Sense HAT is available"""
+        return self.available
     
     def read(self) -> SenseHatData:
         """Read all Sense HAT sensor data and return as model"""
+        if not self.available:
+            raise RuntimeError("Sense HAT is not available")
+        
         # Environmental sensors
         temp = self.sense.get_temperature()
         hum = self.sense.get_humidity()

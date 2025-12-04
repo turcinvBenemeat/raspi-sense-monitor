@@ -45,6 +45,7 @@ class Database:
                 CREATE TABLE IF NOT EXISTS sensehat (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+                    device_id VARCHAR(50),
                     temperature FLOAT,
                     humidity FLOAT,
                     pressure FLOAT,
@@ -68,6 +69,7 @@ class Database:
                 CREATE TABLE IF NOT EXISTS raspberry_pi (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+                    device_id VARCHAR(50),
                     cpu_temp FLOAT,
                     cpu_percent FLOAT,
                     cpu_count INTEGER,
@@ -86,9 +88,11 @@ class Database:
                 )
             """)
             
-            # Create indexes on timestamp for better query performance
+            # Create indexes on timestamp and device_id for better query performance
             cur.execute("CREATE INDEX IF NOT EXISTS idx_sensehat_timestamp ON sensehat(timestamp)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_sensehat_device_id ON sensehat(device_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_raspberry_pi_timestamp ON raspberry_pi(timestamp)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_raspberry_pi_device_id ON raspberry_pi(device_id)")
             
             conn.commit()
             cur.close()
@@ -105,19 +109,20 @@ class Database:
         try:
             cur.execute("""
                 INSERT INTO sensehat (
-                    timestamp, temperature, humidity, pressure,
+                    timestamp, device_id, temperature, humidity, pressure,
                     pitch, roll, yaw,
                     accel_x, accel_y, accel_z,
                     gyro_x, gyro_y, gyro_z,
                     compass_x, compass_y, compass_z
                 ) VALUES (
-                    NOW(), %s, %s, %s,
+                    NOW(), %s, %s, %s, %s,
                     %s, %s, %s,
                     %s, %s, %s,
                     %s, %s, %s,
                     %s, %s, %s
                 )
             """, (
+                Config.DEVICE_ID,
                 float(data.temperature),
                 float(data.humidity),
                 float(data.pressure),
@@ -149,17 +154,18 @@ class Database:
         try:
             cur.execute("""
                 INSERT INTO raspberry_pi (
-                    timestamp, cpu_temp, cpu_percent, cpu_count, cpu_freq_mhz,
+                    timestamp, device_id, cpu_temp, cpu_percent, cpu_count, cpu_freq_mhz,
                     mem_total_gb, mem_used_gb, mem_available_gb, mem_percent,
                     disk_total_gb, disk_used_gb, disk_free_gb, disk_percent,
                     load_avg_1min, load_avg_5min, load_avg_15min
                 ) VALUES (
-                    NOW(), %s, %s, %s, %s,
+                    NOW(), %s, %s, %s, %s, %s,
                     %s, %s, %s, %s,
                     %s, %s, %s, %s,
                     %s, %s, %s
                 )
             """, (
+                Config.DEVICE_ID,
                 data.cpu_temp,
                 float(data.cpu_percent) if data.cpu_percent is not None else None,
                 int(data.cpu_count) if data.cpu_count is not None else None,

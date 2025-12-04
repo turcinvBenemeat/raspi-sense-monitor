@@ -7,12 +7,17 @@ orientation, acceleration, gyroscope, magnetometer) **plus** Raspberry Pi system
 memory, disk, load average), stores it in PostgreSQL, and visualizes it with Grafana.
 
 Components:
-1. Python Logger (reads Sense HAT sensors + Raspberry Pi system metrics)
+1. Python Logger (modular - supports Sense HAT sensors and/or system metrics)
+   - Can run with Sense HAT (full sensor data)
+   - Can run without Sense HAT (system metrics only)
+   - Supports multiple Raspberry Pis with device identification
 2. Remote PostgreSQL server (database - runs on separate server)
 3. Docker stack with
    - Grafana (web dashboard)
 4. systemd service for auto-start on boot
 5. Browser dashboard to monitor live data
+
+**Multi-Pi Support:** Configure different `DEVICE_ID` values for each Raspberry Pi to distinguish them in the database.
 
 ## Repository Structure
 
@@ -99,7 +104,23 @@ cd raspi-sense-monitor
 cp .env.example .env
 ```
 
-Edit .env if needed.
+Edit `.env` file with your configuration:
+
+**For Raspberry Pi WITH Sense HAT:**
+```bash
+ENABLE_SENSEHAT=auto          # or "true" to force enable
+ENABLE_SYSTEM_METRICS=true
+DEVICE_ID=raspberry-pi-1      # Optional: unique identifier
+```
+
+**For Raspberry Pi WITHOUT Sense HAT (system monitoring only):**
+```bash
+ENABLE_SENSEHAT=false         # Disable Sense HAT
+ENABLE_SYSTEM_METRICS=true
+DEVICE_ID=raspberry-pi-2      # Optional: unique identifier
+```
+
+**Note:** Set `ENABLE_SENSEHAT=auto` to automatically detect if Sense HAT is available. The logger will work with or without Sense HAT.
 
 ---
 
@@ -136,6 +157,79 @@ POSTGRES_PASSWORD=your-postgres-password
 
 **Note:** The logger will automatically create the required tables (`sensehat` and `raspberry_pi`) on first run when it connects to the database.
 
+### 4.3 Database Schema
+
+The logger automatically creates two tables in PostgreSQL:
+
+#### `sensehat` Table
+Stores Sense HAT sensor data (only populated if Sense HAT is enabled and available).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | SERIAL PRIMARY KEY | Auto-incrementing unique identifier |
+| `timestamp` | TIMESTAMP | Record timestamp (default: NOW()) |
+| `device_id` | VARCHAR(50) | Device identifier (from DEVICE_ID env var, NULL if not set) |
+| `temperature` | FLOAT | Temperature in °C |
+| `humidity` | FLOAT | Humidity percentage |
+| `pressure` | FLOAT | Atmospheric pressure in millibars |
+| `pitch` | FLOAT | Orientation pitch angle |
+| `roll` | FLOAT | Orientation roll angle |
+| `yaw` | FLOAT | Orientation yaw angle |
+| `accel_x` | FLOAT | Acceleration X-axis (raw) |
+| `accel_y` | FLOAT | Acceleration Y-axis (raw) |
+| `accel_z` | FLOAT | Acceleration Z-axis (raw) |
+| `gyro_x` | FLOAT | Gyroscope X-axis (raw) |
+| `gyro_y` | FLOAT | Gyroscope Y-axis (raw) |
+| `gyro_z` | FLOAT | Gyroscope Z-axis (raw) |
+| `compass_x` | FLOAT | Magnetometer X-axis (raw) |
+| `compass_y` | FLOAT | Magnetometer Y-axis (raw) |
+| `compass_z` | FLOAT | Magnetometer Z-axis (raw) |
+
+**Indexes:**
+- `idx_sensehat_timestamp` on `timestamp`
+- `idx_sensehat_device_id` on `device_id`
+
+#### `raspberry_pi` Table
+Stores Raspberry Pi system metrics (always populated if system metrics are enabled).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | SERIAL PRIMARY KEY | Auto-incrementing unique identifier |
+| `timestamp` | TIMESTAMP | Record timestamp (default: NOW()) |
+| `device_id` | VARCHAR(50) | Device identifier (from DEVICE_ID env var, NULL if not set) |
+| `cpu_temp` | FLOAT | CPU temperature in °C (NULL if unavailable) |
+| `cpu_percent` | FLOAT | CPU usage percentage |
+| `cpu_count` | INTEGER | Number of CPU cores (NULL if unavailable) |
+| `cpu_freq_mhz` | FLOAT | CPU frequency in MHz (NULL if unavailable) |
+| `mem_total_gb` | FLOAT | Total memory in GB |
+| `mem_used_gb` | FLOAT | Used memory in GB |
+| `mem_available_gb` | FLOAT | Available memory in GB |
+| `mem_percent` | FLOAT | Memory usage percentage |
+| `disk_total_gb` | FLOAT | Total disk space in GB |
+| `disk_used_gb` | FLOAT | Used disk space in GB |
+| `disk_free_gb` | FLOAT | Free disk space in GB |
+| `disk_percent` | FLOAT | Disk usage percentage |
+| `load_avg_1min` | FLOAT | Load average (1 minute) |
+| `load_avg_5min` | FLOAT | Load average (5 minutes) |
+| `load_avg_15min` | FLOAT | Load average (15 minutes) |
+
+**Indexes:**
+- `idx_raspberry_pi_timestamp` on `timestamp`
+- `idx_raspberry_pi_device_id` on `device_id`
+
+**Example SQL to view all devices:**
+```sql
+-- List all unique devices in sensehat table
+SELECT DISTINCT device_id, COUNT(*) as records
+FROM sensehat
+GROUP BY device_id;
+
+-- List all unique devices in raspberry_pi table
+SELECT DISTINCT device_id, COUNT(*) as records
+FROM raspberry_pi
+GROUP BY device_id;
+```
+
 ## 5. Start Grafana
 ```bash
 cd docker
@@ -164,11 +258,21 @@ export $(grep -v '^#' .env | xargs)
 python logger/main.py
 ```
 
-You should see:
-```
-Wrote Sense HAT: {'temperature': ..., 'humidity': ..., 'pressure': ..., ...}
-Wrote System: {'cpu_temp': ..., 'cpu_percent': ..., 'mem_percent': ..., ...}
-```
+You should see output like:
+- **With Sense HAT:** 
+  ```
+  Sense HAT detected and initialized
+  Sense HAT logging enabled
+  Wrote Sense HAT: SenseHatData(...)
+  Wrote System: RaspberryPiData(...)
+  ```
+- **Without Sense HAT:**
+  ```
+  Sense HAT not available: ...
+  Continuing without Sense HAT sensors...
+  Sense HAT not available, continuing with system metrics only
+  Wrote System: RaspberryPiData(...)
+  ```
 
 Stop with Ctrl+C.
 
@@ -220,8 +324,11 @@ SELECT
   temperature AS "Temperature"
 FROM sensehat
 WHERE timestamp >= NOW() - INTERVAL '1 hour'
+  AND (device_id = 'raspberry-pi-1' OR device_id IS NULL)  -- Filter by device (optional)
 ORDER BY timestamp
 ```
+
+**Note:** If you're using multiple Raspberry Pis, add `AND device_id = 'your-device-id'` to filter by specific device.
 
 Set panel:
 - Title: Temperature
