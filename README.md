@@ -20,7 +20,19 @@ Components:
 raspi-sense-monitor/
 │
 ├── logger/                     # Python Sense HAT logger
-│   ├── main.py
+│   ├── __init__.py
+│   ├── main.py                 # Main entry point
+│   ├── config.py               # Configuration management
+│   ├── models/                  # Data models
+│   │   ├── __init__.py
+│   │   └── data.py             # SenseHatData, RaspberryPiData
+│   ├── sensors/                # Sensor reading modules
+│   │   ├── __init__.py
+│   │   ├── sensehat.py         # Sense HAT reader
+│   │   └── system.py           # System metrics reader
+│   ├── database/                # Database operations
+│   │   ├── __init__.py
+│   │   └── db.py               # PostgreSQL operations
 │   ├── requirements.txt
 │   └── systemd/
 │       └── sense-logger.service

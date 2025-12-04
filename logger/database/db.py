@@ -1,60 +1,13 @@
 """
 Database module for Raspberry Pi Sense HAT Monitor
-Handles PostgreSQL connection, models, and database operations
+Handles PostgreSQL connection and database operations
 """
-import os
-from dataclasses import dataclass
 from typing import Optional
 import psycopg2
-from psycopg2.extensions import connection, cursor
+from psycopg2.extensions import connection
 
-
-# Database configuration from environment variables
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "sensehat")
-POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "postgres")
-
-
-@dataclass
-class SenseHatData:
-    """Model for Sense HAT sensor data"""
-    temperature: float
-    humidity: float
-    pressure: float
-    pitch: float
-    roll: float
-    yaw: float
-    accel_x: float
-    accel_y: float
-    accel_z: float
-    gyro_x: float
-    gyro_y: float
-    gyro_z: float
-    compass_x: float
-    compass_y: float
-    compass_z: float
-
-
-@dataclass
-class RaspberryPiData:
-    """Model for Raspberry Pi system metrics"""
-    cpu_temp: Optional[float]
-    cpu_percent: float
-    cpu_count: Optional[int]
-    cpu_freq_mhz: Optional[float]
-    mem_total_gb: float
-    mem_used_gb: float
-    mem_available_gb: float
-    mem_percent: float
-    disk_total_gb: float
-    disk_used_gb: float
-    disk_free_gb: float
-    disk_percent: float
-    load_avg_1min: float
-    load_avg_5min: float
-    load_avg_15min: float
+from ..config import Config
+from ..models import SenseHatData, RaspberryPiData
 
 
 class Database:
@@ -67,11 +20,11 @@ class Database:
         """Get or create database connection"""
         if self._connection is None or self._connection.closed:
             self._connection = psycopg2.connect(
-                host=POSTGRES_HOST,
-                port=POSTGRES_PORT,
-                database=POSTGRES_DB,
-                user=POSTGRES_USER,
-                password=POSTGRES_PASSWORD
+                host=Config.POSTGRES_HOST,
+                port=Config.POSTGRES_PORT,
+                database=Config.POSTGRES_DB,
+                user=Config.POSTGRES_USER,
+                password=Config.POSTGRES_PASSWORD
             )
         return self._connection
     
